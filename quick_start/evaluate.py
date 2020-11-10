@@ -1,10 +1,12 @@
 import tempfile
 from typing import Dict, Iterable, List, Tuple
 
+from torch.utils.data import DataLoader
+
 import torch
 
 import allennlp
-from allennlp.data import DataLoader, DatasetReader, Instance, Vocabulary
+from allennlp.data import DatasetReader, Instance, Vocabulary, allennlp_collate
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Token, Tokenizer, WhitespaceTokenizer
@@ -113,8 +115,8 @@ def build_data_loaders(
     # Note that DataLoader is imported from allennlp above, *not* torch.
     # We need to get the allennlp-specific collate function, which is
     # what actually does indexing and batching.
-    train_loader = DataLoader(train_data, batch_size=8, shuffle=True)
-    dev_loader = DataLoader(dev_data, batch_size=8, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=8, shuffle=True, collate_fn=allennlp_collate)
+    dev_loader = DataLoader(dev_data, batch_size=8, shuffle=False, collate_fn=allennlp_collate)
     return train_loader, dev_loader
 
 
@@ -183,7 +185,7 @@ model, dataset_reader = run_training_loop()
 # Now we can evaluate the model on a new dataset.
 test_data = dataset_reader.read('quick_start/data/movie_review/test.tsv')
 test_data.index_with(model.vocab)
-data_loader = DataLoader(test_data, batch_size=8)
+data_loader = DataLoader(test_data, batch_size=8, collate_fn=allennlp_collate)
 
 results = evaluate(model, data_loader)
 print(results)
